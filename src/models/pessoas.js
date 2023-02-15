@@ -1,28 +1,39 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
+'use strict'
 module.exports = (sequelize, DataTypes) => {
-  class Pessoas extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
-    static associate(models) {
-      Pessoas.hasMany(models.Turmas, { foreignKey: 'docente_id' })
-      Pessoas.hasMany(models.Matriculas, { foreignKey: 'estudante_id' })
-
-    }
-  }
-  Pessoas.init({
-    nome: DataTypes.STRING,
+  const Pessoas = sequelize.define('Pessoas', {
+    nome: {
+      type: DataTypes.STRING,
+      validate: {
+        funcaoValidadora: function(dado) {
+          if (dado.length < 3) throw new Error('O campo nome deve ter mais de 2 caracteres.')
+        }
+      }
+    },
     ativo: DataTypes.BOOLEAN,
-    email: DataTypes.STRING,
+    email: { 
+      type: DataTypes.STRING,
+      validate: { 
+        unique: true,
+        isEmail: { 
+          args: true, 
+          msg: 'Dado do tipo e-mail é inválido.' }} },
     role: DataTypes.STRING
-  }, {
-    sequelize,
-    modelName: 'Pessoas',
-  });
-  return Pessoas;
-};
+  }, { 
+    paranoid: true, 
+    defaultScope: {
+      where: { ativo: true}
+    }, scopes: {
+      todos: {where: {} },
+    }
+   })
+  Pessoas.associate = function(models) {
+    Pessoas.hasMany(models.Turmas, {
+      foreignKey: 'docente_id'
+    }) 
+    Pessoas.hasMany(models.Matriculas, {
+      foreignKey: 'estudante_id'
+    })
+
+  }
+  return Pessoas
+}
